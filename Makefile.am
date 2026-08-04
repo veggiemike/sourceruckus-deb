@@ -1299,7 +1299,7 @@ SNAPS_WORKSTATION += thunderbird
 	  echo "  -" >> sysroot/var/lib/snapd/seed/seed.yaml; \
 	  echo "    name: $$name" >> sysroot/var/lib/snapd/seed/seed.yaml; \
 	  echo "    channel: stable" >> sysroot/var/lib/snapd/seed/seed.yaml; \
-	  snap=sysroot/var/lib/snapd/seed/snaps/$$name*.snap; \
+	  snap=$$(basename $$(realpath sysroot/var/lib/snapd/seed/snaps/$$name*.snap)); \
 	  echo "    file: $$snap" >> sysroot/var/lib/snapd/seed/seed.yaml; \
 	done
 	mv sysroot/var/lib/snapd/seed/snaps/*.assert sysroot/var/lib/snapd/seed/assertions/
@@ -1348,9 +1348,20 @@ PKGS_WORKSTATION_LOCAL += steam
 #
 # FIXME: audit services
 #
+# FIXME: I've noticed early on that there's a new policy file the
+#        explicitly prohibits auto-mounting of removable ext4
+#        filesystems... which I find offensively stupid and annoying.
+#        I'm just not sure what the *best* fix is yet.
+#
+#        /usr/lib/udev/rules.d/64-ext4.rules
+#
+#        could sed a # into the the "^SUBSYSTEM" line, but not sure
+#        how that will jive with apt upgrades down the road.
+#
 .build/RUCKUS-WORKSTATION-FINAL: .build/RUCKUS-WORKSTATION-LOCAL
 	$(MAKE) sysroot-mount-vfs
 	rm -rfv sysroot/tmp/*
+	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' /usr/lib/udev/rules.d/64-ext4.rules
 	touch $@
 
 workstation.sqsh: .build/RUCKUS-WORKSTATION-FINAL

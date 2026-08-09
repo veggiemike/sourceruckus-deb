@@ -130,7 +130,7 @@ upper_layer:
 sysroot-clean:
 	$(MAKE) sysroot-umount-vfs
 	umount sysroot || echo not mounted
-	rm -rf sysroot
+	rm -rf --one-file-system sysroot
 	umount upper_layer || echo not mounted
 	rm -rf upper_layer
 	umount sqsh_layer-vmm || echo not mounted

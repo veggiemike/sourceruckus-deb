@@ -1361,7 +1361,10 @@ PKGS_WORKSTATION_LOCAL += steam
 .build/RUCKUS-WORKSTATION-FINAL: .build/RUCKUS-WORKSTATION-LOCAL
 	$(MAKE) sysroot-mount-vfs
 	rm -rfv sysroot/tmp/*
-	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' /usr/lib/udev/rules.d/64-ext4.rules
+	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' sysroot/usr/lib/udev/rules.d/64-ext4.rules
+	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' sysroot/usr/lib/udev/rules.d/64-xfs.rules
+	echo "# don't let udisks make borky disk-mount buttons for zpools" > sysroot/usr/lib/udev/rules.d/99-hide-zpools.rules
+	echo 'SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="zfs_member", ENV{UDISKS_IGNORE}="1"'  >> sysroot/usr/lib/udev/rules.d/99-hide-zpools.rules
 	touch $@
 
 workstation.sqsh: .build/RUCKUS-WORKSTATION-FINAL

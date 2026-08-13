@@ -422,6 +422,20 @@ PKGS_COMPILATION += subversion python3-matplotlib libnamespace-clean-perl qttran
 PKGS_COMPILATION += libpackage-stash-xs-perl qt5-gtk-platformtheme libwacom-bin python3-bs4
 PKGS_COMPILATION += python3-html5lib python3-chardet python3-olefile r-recommended
 PKGS_COMPILATION += r-base-dev
+# more packages needed to build mbsystem as of 5.8.3beta16.  well,
+# probably needed prior to that version, but that's the one I was
+# trying to build when I realized
+#
+PKGS_COMPILATION += libnetcdf-dev libgdal-dev
+PKGS_COMPILATION += xfonts-100dpi libglu1-mesa-dev
+PKGS_COMPILATION += libopencv-dev
+# recommended packages from that last group
+#
+#PKGS_COMPILATION += libexif-doc
+PKGS_COMPILATION += libgphoto2-l10n gstreamer1.0-plugins-base opencv-data
+PKGS_COMPILATION += libopencv-java libraw1394-tools
+#PKGS_COMPILATION += va-driver-all
+#PKGS_COMPILATION += vdpau-driver-all
 
 
 ################################################################################
@@ -1105,7 +1119,7 @@ PKGS_WORKSTATION += gnuplot
 PKGS_WORKSTATION += inkscape xfig dia
 PKGS_WORKSTATION += audacity audacious
 PKGS_WORKSTATION += opus-tools librsvg2-bin speex vorbis-tools sox
-PKGS_WORKSTATION += va-driver-all mesa-utils
+PKGS_WORKSTATION += va-driver-all vdpau-driver-all libexif-doc mesa-utils
 PKGS_WORKSTATION += mesa-vulkan-drivers
 PKGS_WORKSTATION += wireshark gkrellm gitk git-gui
 PKGS_WORKSTATION += vlc

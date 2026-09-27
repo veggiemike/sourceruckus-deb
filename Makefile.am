@@ -36,6 +36,7 @@ DEBOOTSTRAP=$(DEBOOTSTRAP_DIR)/debootstrap
 #
 APT_INSTALL=DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends
 APT_REMOVE=DEBIAN_FRONTEND=noninteractive apt remove -y --autoremove --purge
+APT_UPGRADE=DEBIAN_FRONTEND=noninteractive apt upgrade -y --no-install-recommends --autoremove
 #
 # FIXME: configure flag for this?  or maybe have configure check for
 #        zstd support in mksquashfs?
@@ -461,7 +462,8 @@ PKGS_COMPILATION += libopencv-java libraw1394-tools
 	echo "deb http://archive.ubuntu.com/ubuntu/ resolute-backports main restricted universe multiverse" >> sysroot/etc/apt/sources.list
 	echo "deb http://security.ubuntu.com/ubuntu/ resolute-security main restricted universe multiverse" >> sysroot/etc/apt/sources.list
 	$(CHROOT) apt update
-	$(CHROOT) apt upgrade -y --autoremove
+	cp debconf-config.dat sysroot/var/cache/debconf/config.dat
+	cat debconf-config.dat | $(CHROOT) $(APT_UPGRADE)
 	touch $@
 
 # base list (pared down from ubuntu-server)
@@ -679,7 +681,6 @@ endif
 
 .build/RUCKUS-ES-APT: .build/RUCKUS-ES-APT-PREP
 	$(MAKE) sysroot-mount-vfs
-	cp debconf-config.dat sysroot/var/cache/debconf/config.dat
 	cat debconf-config.dat | $(CHROOT) $(APT_INSTALL) $(PKGS_ES)
 	touch $@
 

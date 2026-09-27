@@ -112,7 +112,7 @@ AC_SUBST(IMG_LIST, $img_list)
 # FIXME: these should have sane defaults, but i'm setting them to my
 #        specific system during development.
 #
-KERNEL_FILES=$(echo $(realpath /scrap/bootfiles/*6.12.y*))
+KERNEL_FILES=$(echo $(realpath /scrap/bootfiles/*6.18.y*))
 SYSLINUX_FILES=$(echo $(realpath /scrap/ruckusrd/subprojects/syslinux/FOO/usr/share/syslinux/efi64/*))
 ISOLINUX_FILES=$(echo $(realpath /scrap/ruckusrd/subprojects/syslinux/FOO/usr/share/syslinux/{isolinux.bin,{ldlinux,libcom32,libmenu,libutil,menu,vesamenu,chain}.c32}))
 EXTLINUX_FILES=$(echo $(realpath /scrap/ruckusrd/subprojects/syslinux/FOO/usr/share/syslinux/*.c32))

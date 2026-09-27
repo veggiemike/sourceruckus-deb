@@ -5,7 +5,7 @@ timeout 50
 menu background sourceruckus-640x480.png
 #menu resolution 1024 768
 #menu background sourceruckus-1024x768.png
-menu title Source Ruckus Noble Installer
+menu title Source Ruckus Resolute Installer
 menu rows 5
 menu passwordrow 4
 menu tabmsgrow 11

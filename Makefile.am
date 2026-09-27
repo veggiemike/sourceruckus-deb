@@ -994,6 +994,7 @@ PKGS_SERVER += open-iscsi
 PKGS_SERVER += udisks2
 PKGS_SERVER += lm-sensors fancontrol read-edid i2c-tools
 PKGS_SERVER += ltfs
+PKGS_SERVER += vlock
 
 .build/RUCKUS-SERVER-OVL:
 	$(MAKE) sysroot-clean
@@ -1120,7 +1121,7 @@ PKGS_WORKSTATION += gnuplot
 PKGS_WORKSTATION += inkscape xfig dia
 PKGS_WORKSTATION += audacity audacious
 PKGS_WORKSTATION += opus-tools librsvg2-bin speex vorbis-tools sox
-PKGS_WORKSTATION += va-driver-all vdpau-driver-all libexif-doc mesa-utils
+PKGS_WORKSTATION += va-driver-all libexif-doc mesa-utils #vdpau-driver-all not found in resolute?
 PKGS_WORKSTATION += mesa-vulkan-drivers
 PKGS_WORKSTATION += wireshark gkrellm gitk git-gui
 PKGS_WORKSTATION += vlc

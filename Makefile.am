@@ -286,6 +286,7 @@ PKGS_COMPILATION += libefivar1t64 libefivar-dev libefiboot1t64 libefiboot-dev # 
 PKGS_COMPILATION += netpbm # for groff
 PKGS_COMPILATION += libbz2-dev libgcrypt20-dev # for fsarchiver
 PKGS_COMPILATION += libslang2-dev # for newt
+PKGS_COMPILATION += libdevmapper-dev # for grub
 # add these for kernel compilation
 PKGS_COMPILATION += libncurses-dev libelf-dev
 # to build zfs deb packages
@@ -978,6 +979,7 @@ PKGS_SERVER += $(PKGS_FILESHARING)
 PKGS_SERVER += ruckusrd
 PKGS_SERVER += firmwarenator
 PKGS_SERVER += microcodenator
+PKGS_SERVER += grub-efi-amd64 # FIXME: check deps on this
 PKGS_SERVER += syslinux syslinux-common extlinux isolinux syslinux-efi syslinux-utils
 PKGS_SERVER += efibootmgr
 PKGS_SERVER += efitools efivar

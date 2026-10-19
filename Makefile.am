@@ -56,6 +56,17 @@ SQSH_COMP=-comp zstd
 #        everything or desktop and add a workstation that has most of
 #        everything but w/out 32bit multilib?
 #
+#        actually, Workstation could come before VMM so it doesn't
+#        have Xen...  and then Desktop could be based off VMM?
+#
+#        or now, have both workstation and vmm be based on server, and desktop
+#        based on workstation (but with the VMM packages added, too).
+#
+#        vmm:server:es
+#        desktop:workstation:server:es
+#
+#        yeah, i think i like that!
+#
 all: @IMG_LIST@
 
 info:
@@ -71,11 +82,15 @@ info:
 	@echo
 	@echo PKGS_SERVER=\"$(PKGS_SERVER)\"
 	@echo
-	@echo PKGS_VMM=\"$(PKGS_VMM)\"
-	@echo
 	@echo PKGS_WORKSTATION=\"$(PKGS_WORKSTATION)\"
 	@echo
 	@echo PKGS_WORKSTATION_LOCAL\"$(PKGS_WORKSTATION_LOCAL)\"
+	@echo
+	@echo PKGS_VMM=\"$(PKGS_VMM)\"
+	@echo
+	@echo PKGS_DESKTOP=\"$(PKGS_DESKTOP)\"
+	@echo
+	@echo PKGS_DESKTOP_LOCAL\"$(PKGS_DESKTOP_LOCAL)\"
 	@echo
 	@echo PKGS_FILESHARING=\"$(PKGS_FILESHARING)\"
 	@echo
@@ -1032,70 +1047,9 @@ server.sqsh: .build/RUCKUS-SERVER-FINAL
 
 
 ################################################################################
-# VMM (Xen Dom0)
-#
-# Based on Server, adds things needed for our VMM setup.
-#
-# NOTE: Currently just xen, but we could add other products here
-#       later.  Maybe XCP-ng, XAPI, or Xen Orchestra for making things
-#       prettier?
-#
-PKGS_VMM =
-PKGS_VMM += xen
-PKGS_VMM += qemu-system-x86 grub-xen-host qemu-utils seabios ovmf
-PKGS_VMM += default-libdecor-0-plugin-1
-PKGS_VMM += librsvg2-common os-prober at-spi2-core libgdk-pixbuf2.0-bin libgtk-3-bin
-PKGS_VMM += ipxe-qemu-256k-compat-efi-roms qemu-system-gui qemu-system-modules-spice
-PKGS_VMM += qemu-system-modules-opengl qemu-block-extra cpu-checker
-#PKGS_VMM += libgl1-amber-dri # resolute really didn't like this one
-
-.build/RUCKUS-VMM-OVL:
-	$(MAKE) sysroot-clean
-	$(MAKE) sqsh_layer-es sqsh_layer-server upper_layer
-	$(MKDIR_P) sysroot upper_layer/{upper,work}
-	mount -t overlay -o lowerdir=sqsh_layer-server:sqsh_layer-es,upperdir=upper_layer/upper,workdir=upper_layer/work none sysroot
-	touch $@
-
-# apt install
-.build/RUCKUS-VMM-APT: .build/RUCKUS-VMM-OVL
-	$(MAKE) sysroot-mount-vfs
-	cat debconf-config.dat | $(CHROOT) $(APT_INSTALL) $(PKGS_VMM)
-	touch $@
-
-# service enable/disable, tweaks, etc
-#
-# FIXME: audit services
-#
-.build/RUCKUS-VMM-FINAL: .build/RUCKUS-VMM-APT
-	$(MAKE) sysroot-mount-vfs
-	$(CHROOT) systemctl enable xen-init-dom0 xen-qemu-dom0-disk-backend xen-watchdog xenconsoled xenstored
-	rm -rfv sysroot/tmp/*
-	touch $@
-
-vmm.sqsh: .build/RUCKUS-VMM-FINAL
-	$(MAKE) sysroot-umount-vfs
-	mksquashfs upper_layer/upper $@ $(SQSH_COMP) -noappend -wildcards
-
-
-################################################################################
 # Workstation
 #
-# Based off Server (which exludes ES-file and ES-web additions), adds everything
-# else we want in an awesome workstation of doom (including the kitchen sink).
-#
-# NOTE: This image includes upstream Wine (including full 32bit library
-#       support) so you can run Windows junk.
-#
-# FIXME:
-# - via apt
-#   - jackd?
-#   - dvd player stuff (maybe?)
-#   - special font packages (maybe?)
-#   - libglvnd-dev (what did i need this for...?)
-# - 3rd party stuff
-#   - ardour (wget the download, although I needed to pay for this didn't i... should i just install the ubuntu debs?)
-#   - vmware player?
-#   - virtualbox?
+# Based on Server, adds graphical desktop
 #
 .PHONY: PPAS_WORKSTATION
 PPAS_WORKSTATION: sysroot/etc/apt/sources.list.d/wine.list
@@ -1386,6 +1340,374 @@ PKGS_WORKSTATION_LOCAL += steam
 	touch $@
 
 workstation.sqsh: .build/RUCKUS-WORKSTATION-FINAL
+	$(MAKE) sysroot-umount-vfs
+	mksquashfs upper_layer/upper $@ $(SQSH_COMP) -noappend -wildcards
+
+
+
+################################################################################
+# VMM (Xen Dom0)
+#
+# Based on Server (not Workstation), adds things needed for our VMM setup.
+#
+# NOTE: Currently just xen, but we could add other products here
+#       later.  Maybe XCP-ng, XAPI, or Xen Orchestra for making things
+#       prettier?
+#
+# FIXME: Sounds like XCP-ng is a full-blown bootable image, not software we can
+#        add... so we'll probably stay bare Xen with custom scripts.
+#
+PKGS_VMM =
+PKGS_VMM += xen
+PKGS_VMM += qemu-system-x86 grub-xen-host qemu-utils seabios ovmf
+PKGS_VMM += default-libdecor-0-plugin-1
+PKGS_VMM += librsvg2-common os-prober at-spi2-core libgdk-pixbuf2.0-bin libgtk-3-bin
+PKGS_VMM += ipxe-qemu-256k-compat-efi-roms qemu-system-gui qemu-system-modules-spice
+PKGS_VMM += qemu-system-modules-opengl qemu-block-extra cpu-checker
+#PKGS_VMM += libgl1-amber-dri # resolute really didn't like this one
+
+.build/RUCKUS-VMM-OVL:
+	$(MAKE) sysroot-clean
+	$(MAKE) sqsh_layer-es sqsh_layer-server upper_layer
+	$(MKDIR_P) sysroot upper_layer/{upper,work}
+	mount -t overlay -o lowerdir=sqsh_layer-server:sqsh_layer-es,upperdir=upper_layer/upper,workdir=upper_layer/work none sysroot
+	touch $@
+
+# apt install
+.build/RUCKUS-VMM-APT: .build/RUCKUS-VMM-OVL
+	$(MAKE) sysroot-mount-vfs
+	cat debconf-config.dat | $(CHROOT) $(APT_INSTALL) $(PKGS_VMM)
+	touch $@
+
+# service enable/disable, tweaks, etc
+#
+# FIXME: audit services
+#
+.build/RUCKUS-VMM-FINAL: .build/RUCKUS-VMM-APT
+	$(MAKE) sysroot-mount-vfs
+	$(CHROOT) systemctl enable xen-init-dom0 xen-qemu-dom0-disk-backend xen-watchdog xenconsoled xenstored
+	rm -rfv sysroot/tmp/*
+	touch $@
+
+vmm.sqsh: .build/RUCKUS-VMM-FINAL
+	$(MAKE) sysroot-umount-vfs
+	mksquashfs upper_layer/upper $@ $(SQSH_COMP) -noappend -wildcards
+
+
+################################################################################
+# Desktop
+#
+# Based off VMM, adds everything else we want in an awesome developer desktop
+# (including the kitchen sink).
+#
+# FIXME: maybe we should build this off of Workstation, which should do all the
+#        basic desktop stuff, including all the auto-snap shenanigans... then
+#        all we'd need to duplicate here is the addition of the Xen
+#        packages... which is just a couple.
+#
+# NOTE: This image includes upstream Wine (including full 32bit library
+#       support) so you can run Windows junk.
+#
+# FIXME:
+# - via apt
+#   - jackd?
+#   - dvd player stuff (maybe?)
+#   - special font packages (maybe?)
+#   - libglvnd-dev (what did i need this for...?)
+# - 3rd party stuff
+#   - ardour (wget the download, although I needed to pay for this didn't i... should i just install the ubuntu debs?)
+#   - vmware player?
+#   - virtualbox?
+#
+.PHONY: PPAS_DESKTOP
+PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/wine.list
+PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/qgis.list
+PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/openshot.list
+
+PKGS_DESKTOP =
+PKGS_DESKTOP += ubuntu-desktop
+# development stuff
+PKGS_DESKTOP += $(PKGS_COMPILATION)
+PKGS_DESKTOP += kernel-builder
+PKGS_DESKTOP += gcc-multilib g++-multilib gfortran-multilib
+PKGS_DESKTOP += php php-xml
+PKGS_DESKTOP += default-jdk
+# GIS stuff
+PKGS_DESKTOP += gmt gmt-dcw gmt-gshhg proj-bin
+PKGS_DESKTOP += mbsystem
+PKGS_DESKTOP += python3-geopandas
+# everything else we want
+PKGS_DESKTOP += gimp gimp-help-en gimp-data-extras gsfonts libbluray-bdj mesa-opencl-icd
+PKGS_DESKTOP += libvdpau-va-gl1 libvdpau1 vdpauinfo
+PKGS_DESKTOP += groff ghostscript imagemagick libpaper2 netpbm psutils
+PKGS_DESKTOP += ffmpeg
+PKGS_DESKTOP += gnuplot
+PKGS_DESKTOP += inkscape xfig dia
+PKGS_DESKTOP += audacity audacious
+PKGS_DESKTOP += opus-tools librsvg2-bin speex vorbis-tools sox
+PKGS_DESKTOP += va-driver-all libexif-doc mesa-utils #vdpau-driver-all not found in resolute?
+PKGS_DESKTOP += mesa-vulkan-drivers
+PKGS_DESKTOP += wireshark gkrellm gitk git-gui
+PKGS_DESKTOP += vlc
+PKGS_DESKTOP += gnome-tweaks rdesktop
+PKGS_DESKTOP += emacs-gtk emacs # replaces emacs-nox
+PKGS_DESKTOP += wine-devel # upstream ppa # FIXME: this sometimes has upgrade dependency problems with wine-devel-amd64 and wine-devel-i386
+PKGS_DESKTOP += qgis # upstream-ppa
+PKGS_DESKTOP += openshot-qt # libopenshot libopenshot-audio # upstream ppa
+
+PKGS_DESKTOP_REMOVE =
+PKGS_DESKTOP_REMOVE += update-manager update-notifier
+PKGS_DESKTOP_REMOVE += gnome-initial-setup
+
+.build/RUCKUS-DESKTOP-OVL:
+	$(MAKE) sysroot-clean
+	$(MAKE) sqsh_layer-es sqsh_layer-server sqsh_layer-vmm upper_layer
+	$(MKDIR_P) sysroot upper_layer/{upper,work}
+	mount -t overlay -o lowerdir=sqsh_layer-vmm:sqsh_layer-server:sqsh_layer-es,upperdir=upper_layer/upper,workdir=upper_layer/work none sysroot
+	touch $@
+
+.build/RUCKUS-DESKTOP-PPAS: .build/RUCKUS-DESKTOP-OVL
+	$(MAKE) sysroot-mount-vfs
+	$(MAKE) PPAS_DESKTOP
+	touch $@
+
+# add 32bit architecture support
+.build/RUCKUS-DESKTOP-ARCH: .build/RUCKUS-DESKTOP-PPAS
+	$(MAKE) sysroot-mount-vfs
+	$(CHROOT) dpkg --add-architecture i386
+	$(CHROOT) apt update
+	touch $@
+
+# apt install
+#
+# NOTE: We do --install-recommends for this one!  Bring on the kitchen
+#       sink!
+#
+# FIXME: Is there something we can do to force the inclusion of snap
+#        pacakges?  From a built system, if you apt install firefox or
+#        thunderbird it automatically installs the snap (and any
+#        requirements).
+#
+# FIXME: Also, and probably related, nothing is installing the base
+#        snaps found on a fresh Ubuntu 24.04 install.  Here's what I
+#        see on one of those (actualy this list is from a box that
+#        went focal->jammy->noble so might have extra cruft):
+#
+#        bare			(installed by firefox)
+#        core22			(installed by firefox)
+#        firefox		(definately need this)
+#        firmware-updater
+#        gnome-42-2204		(installed by firefox)
+#        gtk-common-themes	(installed by firefox)
+#        snap-store
+#        snapd			(installed by firefox)
+#        snapd-desktop-integration
+#
+#        the noble install disk also had these installed:
+#
+#        ubuntu-desktop-bootstrap
+#
+#        Iteresting... I thought thunderbird was a part of
+#        ubuntu-desktop, but it's not installed after a default
+#        installation.  Oooh, it *is* a part of ubuntu-desktop, but
+#        the default package list during graphical installation
+#        doesn't install ubuntu-desktop.  It also doesn't installe
+#        libreoffice, file-roller, gnome-calendar, gnome-snapshot,
+#        gstreamer, remmina, rhythmbox, shotwell, totem, ure, or
+#        xorriso.
+#
+#        The only additional snap installed by installing
+#        ubuntu-desktop was thunderbird
+#
+# FIXME: looking at snaps intstalled by default for 26.04 now.  on the
+#        install media, the casper/minimal.en.manifest.full file has
+#        this at the end (I sorted it alphabetically for comparison's
+#        sake)... I bet that's the list of snaps that get installed.
+#        Let's verify that, shall we?
+#
+#        snap:bare       stable  5
+#        snap:core24     stable  1587
+#        snap:desktop-security-center    1/stable/ubuntu-26.04   150
+#        snap:firefox    stable/ubuntu-26.04     8107
+#        snap:firmware-updater   1/stable/ubuntu-26.04   226
+#        snap:gnome-46-2404      stable/ubuntu-26.04     153
+#        snap:gtk-common-themes  stable/ubuntu-26.04     1535
+#        snap:mesa-2404  stable/ubuntu-26.04     1165
+#        snap:prompting-client   1/stable/ubuntu-26.04   204
+#        snap:snap-store 2/stable/ubuntu-26.04   1367
+#        snap:snapd      stable  26865
+#        snap:snapd-desktop-integration  stable/ubuntu-26.04     361
+#
+#        oh and look what else I found in casper/minimal.squashfs
+#
+# drwxr-xr-x root/root                75 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed
+# drwxr-xr-x root/root               458 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions
+# -rw-r--r-- root/root              1666 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/account
+# -rw-r--r-- root/root              2439 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/account-key
+# -rw-r--r-- root/root              4521 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/bare_5.assert
+# -rw-r--r-- root/root              4556 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/core24_1587.assert
+# -rw-r--r-- root/root              4853 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/desktop-security-center_150.assert
+# -rw-r--r-- root/root              7926 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/firefox_8107.assert
+# -rw-r--r-- root/root              4976 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/firmware-updater_226.assert
+# -rw-r--r-- root/root              4743 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/gnome-46-2404_153.assert
+# -rw-r--r-- root/root              5195 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/gtk-common-themes_1535.assert
+# -rw-r--r-- root/root              4735 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/mesa-2404_1165.assert
+# -rw-r--r-- root/root               957 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/model
+# -rw-r--r-- root/root              4647 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/prompting-client_204.assert
+# -rw-r--r-- root/root              5583 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/snap-store_1367.assert
+# -rw-r--r-- root/root              5195 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/assertions/snapd-desktop-integration_361.assert
+# -rw-r--r-- root/root              4556 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/assertions/snapd_26865.assert
+# -rw-r--r-- root/root              1099 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/seed.yaml
+# drwxr-xr-x root/root               423 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps
+# -rw------- root/root              4096 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/bare_5.snap
+# -rw------- root/root          70094848 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/snaps/core24_1587.snap
+# -rw------- root/root          20602880 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/snaps/desktop-security-center_150.snap
+# -rw------- root/root         286994432 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/snaps/firefox_8107.snap
+# -rw------- root/root          17301504 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/snaps/firmware-updater_226.snap
+# -rw------- root/root         635518976 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/gnome-46-2404_153.snap
+# -rw------- root/root          96141312 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/gtk-common-themes_1535.snap
+# -rw------- root/root         414167040 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/mesa-2404_1165.snap
+# -rw------- root/root          19738624 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/prompting-client_204.snap
+# -rw------- root/root          16449536 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/snap-store_1367.snap
+# -rw------- root/root            593920 2026-04-23 11:21 squashfs-root/var/lib/snapd/seed/snaps/snapd-desktop-integration_361.snap
+# -rw------- root/root          51654656 2026-04-23 11:20 squashfs-root/var/lib/snapd/seed/snaps/snapd_26865.snap
+#
+#       So, googling has revealed we can "seed" snapd and that on
+#       first-boot these snaps will get installed (I assume quickly
+#       w/out downloading a mess of stuff).  Links of interest:
+#
+#       https://forum.snapcraft.io/t/seed-new-snap-into-the-image/25301
+#
+#       The question then is: For our image builder, does it make more
+#       sense to 1) snap install these in the crooted environment or
+#       2) seed snapd like the ubuntu installer.
+#
+#       Since there's no easy way to download all these seeded files
+#       from the installer.iso, it might make more sense to just go
+#       with option 1 - chrooted snap install
+#
+#       ok, I cannot do `snap install` in a chrooted environemnt,
+#       because it needs tons of fancy stuff runing that isn't... but
+#       I *can* run snap download and setup the seeding from inside
+#       the crooted environment.
+#
+SNAPS_DESKTOP =
+SNAPS_DESKTOP += bare
+SNAPS_DESKTOP += core24
+SNAPS_DESKTOP += desktop-security-center
+SNAPS_DESKTOP += firefox
+SNAPS_DESKTOP += firmware-updater
+SNAPS_DESKTOP += gnome-46-2404
+SNAPS_DESKTOP += gtk-common-themes
+SNAPS_DESKTOP += mesa-2404
+SNAPS_DESKTOP += prompting-client
+SNAPS_DESKTOP += snap-store
+SNAPS_DESKTOP += snapd
+SNAPS_DESKTOP += snapd-desktop-integration
+# we add thunderbird because it should have been installed when the
+# dep was installed via apt.
+SNAPS_DESKTOP += thunderbird
+
+
+.build/RUCKUS-DESKTOP-APT: .build/RUCKUS-DESKTOP-ARCH
+	$(MAKE) sysroot-mount-vfs
+	cat debconf-config.dat | $(CHROOT) $(APT_INSTALL) --install-recommends $(PKGS_DESKTOP)
+	touch $@
+
+.build/RUCKUS-DESKTOP-REMOVE: .build/RUCKUS-DESKTOP-APT
+	$(MAKE) sysroot-mount-vfs
+	cat debconf-config.dat | $(CHROOT) $(APT_REMOVE) $(PKGS_DESKTOP_REMOVE)
+	touch $@
+
+# FIXME: some of the snaps have channel's other than "stable" on the
+#        official installation media.  For example,
+#        desktop-security-center is 1/stable/ubuntu-26.04, firefox and
+#        a bunch of others are stable/ubuntu-26.04.  What the impact
+#        of me just specifying "stable" for all of them...?
+#
+#        hmm... actually, I'm explicitly downloading from the "stable"
+#        channel so maybe it's fine?
+#
+.build/RUCKUS-DESKTOP-SNAP: .build/RUCKUS-DESKTOP-REMOVE
+	$(MAKE) sysroot-mount-vfs
+	mkdir -p sysroot/var/lib/snapd/seed/{assertions,snaps}
+	cp -v snapd-seedfiles/{account,account-key,model} sysroot/var/lib/snapd/seed/assertions
+	echo "snaps:" > sysroot/var/lib/snapd/seed/seed.yaml
+	for name in $(SNAPS_DESKTOP); do \
+	  $(CHROOT) snap download --target-directory=/var/lib/snapd/seed/snaps \
+	    --channel=stable $$name; \
+	  echo "  -" >> sysroot/var/lib/snapd/seed/seed.yaml; \
+	  echo "    name: $$name" >> sysroot/var/lib/snapd/seed/seed.yaml; \
+	  echo "    channel: stable" >> sysroot/var/lib/snapd/seed/seed.yaml; \
+	  snap=$$(basename $$(realpath sysroot/var/lib/snapd/seed/snaps/$$name*.snap)); \
+	  echo "    file: $$snap" >> sysroot/var/lib/snapd/seed/seed.yaml; \
+	done
+	mv sysroot/var/lib/snapd/seed/snaps/*.assert sysroot/var/lib/snapd/seed/assertions/
+	$(CHROOT) snap prepare-image --classic /var/lib/snapd/seed/assertions/model /var/lib/snapd/seed
+	touch $@
+
+
+sysroot/tmp/google-chrome.deb:
+	wget -qO- https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb > $@
+
+sysroot/tmp/google-earth.deb:
+	wget -qO- https://dl.google.com/linux/direct/google-earth-pro-stable_current_amd64.deb > $@
+
+sysroot/tmp/teamviewer.deb:
+	wget -qO- https://download.teamviewer.com/download/linux/teamviewer_amd64.deb > $@
+
+# FIXME: poo, this doesn't add an upstream ppa... but it does work
+sysroot/tmp/zoom.deb:
+	wget -qO- https://zoom.us/client/latest/zoom_amd64.deb > $@
+
+sysroot/tmp/steam.deb:
+	wget -qO- https://repo.steampowered.com/steam/archive/precise/steam_latest.deb > $@
+
+.PHONY: DOWNLOADS_DESKTOP
+DOWNLOADS_DESKTOP: sysroot/tmp/google-chrome.deb
+DOWNLOADS_DESKTOP: sysroot/tmp/google-earth.deb
+DOWNLOADS_DESKTOP: sysroot/tmp/teamviewer.deb
+DOWNLOADS_DESKTOP: sysroot/tmp/zoom.deb
+DOWNLOADS_DESKTOP: sysroot/tmp/steam.deb
+
+PKGS_DESKTOP_LOCAL =
+PKGS_DESKTOP_LOCAL += google-chrome
+PKGS_DESKTOP_LOCAL += google-earth
+PKGS_DESKTOP_LOCAL += teamviewer
+PKGS_DESKTOP_LOCAL += zoom
+PKGS_DESKTOP_LOCAL += steam
+
+# fetch debs and install locally
+.build/RUCKUS-DESKTOP-LOCAL: .build/RUCKUS-DESKTOP-SNAP
+	$(MAKE) sysroot-mount-vfs
+	$(MAKE) DOWNLOADS_DESKTOP
+	cat debconf-config.dat | $(CHROOT) $(APT_INSTALL) --install-recommends $(patsubst %,/tmp/%.deb,$(PKGS_DESKTOP_LOCAL))
+	touch $@
+
+# service enable/disable, tweaks, etc
+#
+# FIXME: audit services
+#
+# FIXME: I've noticed early on that there's a new policy file the
+#        explicitly prohibits auto-mounting of removable ext4
+#        filesystems... which I find offensively stupid and annoying.
+#        I'm just not sure what the *best* fix is yet.
+#
+#        /usr/lib/udev/rules.d/64-ext4.rules
+#
+#        could sed a # into the the "^SUBSYSTEM" line, but not sure
+#        how that will jive with apt upgrades down the road.
+#
+.build/RUCKUS-DESKTOP-FINAL: .build/RUCKUS-DESKTOP-LOCAL
+	$(MAKE) sysroot-mount-vfs
+	rm -rfv sysroot/tmp/*
+	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' sysroot/usr/lib/udev/rules.d/64-ext4.rules
+	sed -i 's|^SUBSYSTEM|#SUBSYSTEM|' sysroot/usr/lib/udev/rules.d/64-xfs.rules
+	echo "# don't let udisks make borky disk-mount buttons for zpools" > sysroot/usr/lib/udev/rules.d/99-hide-zpools.rules
+	echo 'SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="zfs_member", ENV{UDISKS_IGNORE}="1"'  >> sysroot/usr/lib/udev/rules.d/99-hide-zpools.rules
+	touch $@
+
+desktop.sqsh: .build/RUCKUS-DESKTOP-FINAL
 	$(MAKE) sysroot-umount-vfs
 	mksquashfs upper_layer/upper $@ $(SQSH_COMP) -noappend -wildcards
 

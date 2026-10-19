@@ -82,16 +82,21 @@ AC_ARG_ENABLE(server,
   server=$enableval,
   server=yes)
 AS_IF([test "x$server" = "xyes"], img_list="$img_list server.sqsh")
+AC_ARG_ENABLE(workstation,
+  AS_HELP_STRING([--disable-workstation], [disable building workstation image, workstation.sqsh (depends on server.sqsh)]),
+  workstation=$enableval,
+  workstation=yes)
+AS_IF([test "x$workstation" = "xyes" -a "x$server" = "xyes"], img_list="$img_list workstation.sqsh", workstation=no)
 AC_ARG_ENABLE(vmm,
   AS_HELP_STRING([--disable-vmm], [disable building virtual machine monitor image, vmm.sqsh (depends on server.sqsh)]),
   vmm=$enableval,
   vmm=yes)
-AS_IF([test "x$vmm" = "xyes" -a "x$server" = "xyes"], img_list="$img_list vmm.sqsh")
-AC_ARG_ENABLE(workstation,
-  AS_HELP_STRING([--disable-workstation], [disable building workstation image, workstation.sqsh (depends on vmm.sqsh)]),
-  workstation=$enableval,
-  workstation=yes)
-AS_IF([test "x$workstation" = "xyes" -a "x$vmm" = "xyes"], img_list="$img_list workstation.sqsh")
+AS_IF([test "x$vmm" = "xyes" -a "x$server" = "xyes"], img_list="$img_list vmm.sqsh", vmm=no)
+AC_ARG_ENABLE(desktop,
+  AS_HELP_STRING([--disable-desktop], [disable building desktop image, desktop.sqsh (depends on workstation.sqsh)]),
+  desktop=$enableval,
+  desktop=yes)
+AS_IF([test "x$desktop" = "xyes" -a "x$workstation" = "xyes"], img_list="$img_list desktop.sqsh", desktop=no)
 
 
 # build a devel-enabled base image

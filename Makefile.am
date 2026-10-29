@@ -1010,6 +1010,7 @@ PKGS_SERVER += udisks2
 PKGS_SERVER += lm-sensors fancontrol read-edid i2c-tools
 PKGS_SERVER += ltfs
 PKGS_SERVER += vlock
+PKGS_SERVER += cu # FIXME: maybe uucp and maybe its recommends (openbsd-inetd tcpd update-inetd)?
 
 .build/RUCKUS-SERVER-OVL:
 	$(MAKE) sysroot-clean

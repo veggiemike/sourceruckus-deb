@@ -1062,8 +1062,7 @@ server.sqsh: .build/RUCKUS-SERVER-FINAL
 # Based on Server, adds graphical desktop
 #
 .PHONY: PPAS_WORKSTATION
-PPAS_WORKSTATION: sysroot/etc/apt/sources.list.d/qgis.list
-PPAS_WORKSTATION: sysroot/etc/apt/sources.list.d/openshot.list
+PPAS_WORKSTATION:
 
 PKGS_WORKSTATION =
 PKGS_WORKSTATION += ubuntu-desktop
@@ -1086,8 +1085,6 @@ PKGS_WORKSTATION += wireshark gkrellm gitk git-gui
 PKGS_WORKSTATION += vlc
 PKGS_WORKSTATION += gnome-tweaks rdesktop
 PKGS_WORKSTATION += emacs-gtk emacs # replaces emacs-nox
-PKGS_WORKSTATION += qgis # upstream-ppa
-PKGS_WORKSTATION += openshot-qt # libopenshot libopenshot-audio # upstream ppa
 
 PKGS_WORKSTATION_REMOVE =
 PKGS_WORKSTATION_REMOVE += update-manager update-notifier
@@ -1302,6 +1299,8 @@ vmm.sqsh: .build/RUCKUS-VMM-FINAL
 #   - virtualbox?
 #
 .PHONY: PPAS_DESKTOP
+PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/qgis.list
+PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/openshot.list
 PPAS_DESKTOP: sysroot/etc/apt/sources.list.d/wine.list
 
 PKGS_DESKTOP =
@@ -1315,6 +1314,8 @@ PKGS_DESKTOP += default-jdk
 PKGS_DESKTOP += $(PKGS_VMM)
 # everything else we want
 PKGS_DESKTOP += wine-devel # upstream ppa # FIXME: this sometimes has upgrade dependency problems with wine-devel-amd64 and wine-devel-i386
+PKGS_DESKTOP += qgis # upstream-ppa
+PKGS_DESKTOP += openshot-qt # libopenshot libopenshot-audio # upstream ppa
 
 # FIXME: in all likelyhood, --install-recommends is gonna pull in something we
 #        don't want... for now stick an already-removed package here so it

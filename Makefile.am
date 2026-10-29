@@ -755,8 +755,9 @@ endif
 # NOTE: We clone awesome-powers and prep it's submodules in here, so that it's
 #       available if we're installing w/out an internet connection later on.
 #
-# NOTE: We do NOT create local users here.  That's handled by awesome-powers
-#       during installation/groom.
+# NOTE: We do NOT create local users here.  That's handled by ruckusrd's
+#       firstboot wizard.  But we DO put root in the dialout group, which will
+#       be needed to access serial devices via cu (if/when installed).
 #
 # NOTE: We create globally-managed-devices.conf because all interfaces end up
 #       "unmanaged" in NetworkManager w/out it.  (This was definately needed
@@ -787,6 +788,7 @@ endif
 	mkdir -p sysroot/usr/lib/modules
 	mkdir -p sysroot/usr/lib/firmware
 	mkdir -p sysroot/usr/src
+	$(CHROOT) usermod -aG dialout root
 	touch sysroot/etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 	$(MKDIR_P) sysroot/scrap && cd sysroot/scrap && \
 	    git clone https://github.com/sourceruckus/awesome-powers.git && \

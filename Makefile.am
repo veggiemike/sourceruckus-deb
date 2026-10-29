@@ -1551,6 +1551,8 @@ ruckususb.img: installer-usb/.DONE installer-usb-boot/.DONE
 #
 #ruckusrescue.img
 
+# FIXME: use grub instead of syslinux... boo.  :-/
+
 
 installer-clean:
 	rm -rf installer-*

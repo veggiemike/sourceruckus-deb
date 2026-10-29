@@ -1012,6 +1012,17 @@ PKGS_SERVER += ltfs
 PKGS_SERVER += vlock
 PKGS_SERVER += cu # FIXME: maybe uucp and maybe its recommends (openbsd-inetd tcpd update-inetd)?
 
+# FIXME: where should apparmor (and maybe apparmor-utils) get installed...?
+#        kernel supports it, ubuntu normally has it enabled by default.  Right
+#        now, we explicitly remove it from PKGS_ES leaving it out of everything
+#        that comes before ubuntu-desktop... that leaves us w/ apparmor kernel
+#        support, but no userland tools to control it... not sure if that means
+#        it's doing anything or not.
+#
+#        Google says nothing will be enforced in this case, but I swear I've
+#        seen kernel audit messages from systems in this situation... need to
+#        look deeper.
+#
 .build/RUCKUS-SERVER-OVL:
 	$(MAKE) sysroot-clean
 	$(MAKE) sqsh_layer-es upper_layer

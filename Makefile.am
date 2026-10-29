@@ -780,7 +780,8 @@ endif
 #       "modified files" questions, but that file isn't consistently
 #       used anymore (e.g., accountservice ignores it).
 #
-# FIXME: should really move awesome-powers to /opt
+# FIXME: moved awesome-powers to /opt, need to go change hard-coded paths
+#        everywhere (used to be in /scrap)
 #
 .build/RUCKUS-ES-FINAL: .build/RUCKUS-ES-3RDPARTY
 	$(MAKE) sysroot-mount-vfs
@@ -790,7 +791,7 @@ endif
 	mkdir -p sysroot/usr/src
 	$(CHROOT) usermod -aG dialout root
 	touch sysroot/etc/NetworkManager/conf.d/10-globally-managed-devices.conf
-	$(MKDIR_P) sysroot/scrap && cd sysroot/scrap && \
+	$(MKDIR_P) sysroot/opt && cd sysroot/opt && \
 	    git clone https://github.com/sourceruckus/awesome-powers.git && \
 	    cd awesome-powers && ./autogen.sh
 	$(CHROOT) apt clean

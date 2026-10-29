@@ -780,9 +780,6 @@ endif
 #       "modified files" questions, but that file isn't consistently
 #       used anymore (e.g., accountservice ignores it).
 #
-# FIXME: moved awesome-powers to /opt, need to go change hard-coded paths
-#        everywhere (used to be in /scrap)
-#
 .build/RUCKUS-ES-FINAL: .build/RUCKUS-ES-3RDPARTY
 	$(MAKE) sysroot-mount-vfs
 	echo "rootfs / auto defaults 0 0" > sysroot/etc/fstab
